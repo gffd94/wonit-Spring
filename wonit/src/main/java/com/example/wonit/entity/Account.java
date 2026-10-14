@@ -53,13 +53,30 @@ public class Account {
     @Column(name = "status")
     private String status;
 
-    // customer_id · opened_at 칸은 사용하지 않으므로 매핑하지 않습니다.
+    // opened_at 칸은 사용하지 않으므로 매핑하지 않습니다.
     // validate 는 매핑한 칸만 확인합니다.
+
+    // 계좌개설. new Account() 는 막혀 있으므로 새 계좌는 이 메서드로만 만듭니다
+    // 상태는 "정상", 잔액은 0 으로 고정해서 처음부터 이상한 계좌가 생기지 않게 막습니다
+    // accountId 는 비워 둡니다. save() 할 때 DB 가 매깁니다
+    public static Account open(Integer customerId, String accountType, String accountNo) {
+        Account account = new Account();
+        account.customerId = customerId;
+        account.accountType = accountType;
+        account.accountNo = accountNo;
+        account.balance = 0;
+        account.status = "정상";
+        return account;
+    }
 
     // 🚨 @Setter 는 일부러 붙이지 않습니다.
     // 잔액은 아래 withdraw() 로만 변경되도록 해서
     // "지급정지 · 잔액부족 검사"를 건너뛰고 잔액을 마음대로 변경하지 못하게 막습니다.
     public void withdraw(long amount) {
+        // 🚨 이 검사가 없으면 -100000 출금 = 잔액 +100000 이 됩니다
+        if (amount <= 0) {
+            throw new IllegalArgumentException("출금액은 0 보다 커야 합니다: " + amount);
+        }
         if (status.equals("지급정지")) {
             throw new AccountFrozenException(
                     accountNo + "는 지급정지 계좌라 출금할 수 없습니다.");

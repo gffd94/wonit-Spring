@@ -95,10 +95,12 @@
 --    (1, '010-1111-2222'),
 --    (1, '02-555-0000');
 
-INSERT INTO account (account_id, customer_id, account_no, account_type, balance, status) VALUES
-    (1, 1, '1002-345-678901', '입출금', 1523000, '지급정지'),
-    (2, 1, '1002-345-112233', '적금',   1099500, '정상'),
-    (3, 1, '1002-345-998877', '적금',    497000, '휴면');
+-- account_id 는 적지 않습니다. DB(AUTO_INCREMENT)가 1, 2, 3 순서로 매깁니다
+-- 🚨 번호를 직접 적으면 H2 는 다음 번호를 1 로 기억한 채라서, API 로 계좌를 개설할 때 1번이 겹쳐 실패합니다
+INSERT INTO account (customer_id, account_no, account_type, balance, status) VALUES
+    (1, '1002-345-678901', '입출금', 1523000, '지급정지'),
+    (1, '1002-345-112233', '적금',   1099500, '정상'),
+    (1, '1002-345-998877', '적금',    497000, '휴면');
 
 --INSERT INTO employee (employee_id, name, duty) VALUES
 --    (1, '박지훈', '수신'),

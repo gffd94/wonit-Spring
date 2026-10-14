@@ -1,9 +1,17 @@
 package com.example.wonit.service;
 
+import com.example.wonit.dto.AccountCreateRequest;
 import com.example.wonit.dto.AccountResponse;
+import com.example.wonit.dto.WithdrawRequest;
+import com.example.wonit.dto.WithdrawResponse;
+import com.example.wonit.exception.AccountFrozenException;
+import com.example.wonit.exception.AccountNotFoundException;
+import com.example.wonit.exception.InsufficientBalanceException;
+import com.example.wonit.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +26,9 @@ class AccountServiceTest {
 
     @Autowired
     AccountService accountService;
+
+    @Autowired
+    TransactionRepository transactionRepository;
 
     private List<String> accountNos(List<AccountResponse> responses) {
         return responses.stream().map(AccountResponse::accountNo).toList();
@@ -117,5 +128,114 @@ class AccountServiceTest {
     void accountType_비어있으면_예외() {
         assertThrows(IllegalArgumentException.class, () -> accountService.getAccountsByAccountType(""));
         assertThrows(IllegalArgumentException.class, () -> accountService.getAccountsByAccountType(null));
+    }
+
+    // ── 계좌개설 ──────────────────────────────
+    // @Transactional: 테스트가 끝나면 rollback 해서, 새로 만든 계좌가 위의 status · type 테스트 결과를 바꾸지 않게 합니다
+    @Test
+    @Transactional
+    void 계좌개설_정상() {
+        AccountResponse created = accountService.openAccount(new AccountCreateRequest(1, "입출금"));
+
+        assertTrue(created.accountNo().matches("1002-345-\\d{6}"));
+        assertEquals("입출금", created.accountType());
+        assertEquals(0L, created.balance());
+        assertEquals("정상", created.status());
+        // 저장까지 됐는지: 발급된 번호로 다시 조회된다
+        assertEquals(created.accountNo(), accountService.getAccount(created.accountNo()).getAccountNo());
+    }
+
+    @Test
+    @Transactional
+    void 계좌개설_accountType_앞뒤_공백은_잘라서_저장() {
+        assertEquals("적금", accountService.openAccount(new AccountCreateRequest(1, " 적금 ")).accountType());
+    }
+
+    @Test
+    @Transactional
+    void 계좌개설_두번_하면_서로_다른_계좌번호() {
+        String first = accountService.openAccount(new AccountCreateRequest(1, "입출금")).accountNo();
+        String second = accountService.openAccount(new AccountCreateRequest(1, "입출금")).accountNo();
+        assertNotEquals(first, second);
+    }
+
+    @Test
+    void 계좌개설_accountType_이_잘못되면_예외() {
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.openAccount(new AccountCreateRequest(1, "예금")));
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.openAccount(new AccountCreateRequest(1, null)));
+    }
+
+    @Test
+    void 계좌개설_customerId_가_없거나_0_이하면_예외() {
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.openAccount(new AccountCreateRequest(null, "입출금")));
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.openAccount(new AccountCreateRequest(0, "입출금")));
+    }
+
+    @Test
+    void 없는_계좌번호_조회는_예외() {
+        assertThrows(AccountNotFoundException.class, () -> accountService.getAccount("0000-000-000000"));
+    }
+
+    // ── 출금 ──────────────────────────────────
+    // @Transactional: 끝나면 rollback 해서 잔액 · 거래내역이 원래대로 돌아갑니다 (위의 잔액 테스트가 깨지지 않게)
+    @Test
+    @Transactional
+    void 출금_정상() {
+        long txCountBefore = transactionRepository.count();
+
+        WithdrawResponse result = accountService.withdraw("1002-345-112233", new WithdrawRequest(99500L));
+
+        assertEquals(99500L, result.amount());
+        assertEquals(1000000L, result.balance());
+        assertEquals(1000000L, accountService.getAccount("1002-345-112233").getBalance());
+        assertEquals(txCountBefore + 1, transactionRepository.count());   // 거래내역 1건 INSERT
+    }
+
+    @Test
+    @Transactional
+    void 출금_잔액_전부_빼기는_가능() {
+        assertEquals(0L, accountService.withdraw("1002-345-112233", new WithdrawRequest(1099500L)).balance());
+    }
+
+    @Test
+    @Transactional
+    void 출금_잔액보다_많으면_예외_잔액과_거래내역은_그대로() {
+        long txCountBefore = transactionRepository.count();
+
+        assertThrows(InsufficientBalanceException.class,
+                () -> accountService.withdraw("1002-345-112233", new WithdrawRequest(1099501L)));
+
+        assertEquals(1099500L, accountService.getAccount("1002-345-112233").getBalance());
+        assertEquals(txCountBefore, transactionRepository.count());
+    }
+
+    @Test
+    @Transactional
+    void 출금_지급정지_계좌면_예외() {
+        assertThrows(AccountFrozenException.class,
+                () -> accountService.withdraw("1002-345-678901", new WithdrawRequest(1000L)));
+    }
+
+    @Test
+    @Transactional
+    void 출금_없는_계좌면_예외() {
+        assertThrows(AccountNotFoundException.class,
+                () -> accountService.withdraw("0000-000-000000", new WithdrawRequest(1000L)));
+    }
+
+    @Test
+    @Transactional
+    void 출금액이_0_이하거나_비어있으면_예외() {
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.withdraw("1002-345-112233", new WithdrawRequest(0L)));
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.withdraw("1002-345-112233", new WithdrawRequest(-100000L)));
+        assertThrows(IllegalArgumentException.class,
+                () -> accountService.withdraw("1002-345-112233", new WithdrawRequest(null)));
+        assertEquals(1099500L, accountService.getAccount("1002-345-112233").getBalance());
     }
 }

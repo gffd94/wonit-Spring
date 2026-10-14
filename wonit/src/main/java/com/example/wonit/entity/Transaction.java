@@ -51,4 +51,16 @@ public class Transaction {
 
     @Column(name = "tx_datetime")
     private LocalDateTime txDatetime;
+
+    // 출금 거래 1건. new Transaction() 은 막혀 있으므로 이 메서드로만 만듭니다
+    // account.withdraw() 가 끝난 "뒤"에 불러야 balance_after 에 출금 후 잔액이 들어갑니다
+    public static Transaction withdrawal(Account account, long amount) {
+        Transaction tx = new Transaction();
+        tx.accountId = account.getAccountId();
+        tx.txType = "출금";
+        tx.amount = amount;
+        tx.balanceAfter = account.getBalance();
+        tx.txDatetime = LocalDateTime.now();
+        return tx;
+    }
 }

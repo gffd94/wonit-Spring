@@ -16,6 +16,9 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     // 구현이 없다. 메서드 "이름"이 곧 질문이다: findBy + AccountNo → account_no 로 찾는다 (필드 이름 accountNo 와 같아야 한다)
     Optional<Account> findByAccountNo(String accountNo);
 
+    // existsBy + AccountNo → 그 계좌번호가 있으면 true. 계좌개설 때 번호 중복 검사에 씁니다
+    boolean existsByAccountNo(String accountNo);
+
     // 여기에 필요한 경우 사용자 정의 쿼리를 추가할 수 있습니다.
     // ─────────────────────────────────────────────
     // JPA 메서드 네이밍 규칙으로 쿼리 자동 생성
