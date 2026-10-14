@@ -86,12 +86,10 @@ public class AccountController {
      */
     @GetMapping("/{accountNo}")
     public AccountResponse findOne(@PathVariable("accountNo") String accountNo) {
-        log.trace("trace level의 로그 - 자잘함");
-        log.debug("debug level의 로그 - 개발자가 flow 따라갈 수 있는 수준의 로그");
-        log.info("info level의 로그 - 사용자나 시스템의 의미있는 내용을 담은 로그, 실제 운영환경에는 info 이상만 수집");
-        log.warn("warn level의 로그 - 현재는 문제 없지만 앞으로 문제가 될 수 있는 상황에 대한 경고");
-        log.error("error level의 로그 - 치명적인 로그");
-        return AccountResponse.from(accountService.getAccount(accountNo));
+        log.info("[계좌조회] 요청 accountNo={}", accountNo);
+        AccountResponse response = AccountResponse.from(accountService.getAccount(accountNo));
+        log.info("[계좌조회] 응답 accountNo={}, balance={}", response.accountNo(), response.balance());
+        return response;
     }
 
     // 출금

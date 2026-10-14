@@ -32,6 +32,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // 없는 계좌 → 404
     @ExceptionHandler(AccountNotFoundException.class)
     public ProblemDetail notFound(AccountNotFoundException e) {
+        log.warn("404 응답: {}", e.getMessage());
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     }
 

@@ -11,6 +11,7 @@ import com.example.wonit.repository.AccountRepository;
 import com.example.wonit.repository.TransactionRepository;
 import com.example.wonit.exception.AccountNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AccountService {
@@ -43,8 +45,12 @@ public class AccountService {
      * @throws AccountNotFoundException
      */
     public Account getAccount(String accountNo) {
+        log.debug("[getAccount] 입력 accountNo={}", accountNo);
         return findAccount(accountNo)
-                .orElseThrow(() -> new AccountNotFoundException(accountNo + " 계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> {
+                    log.warn("[getAccount] 계좌 없음 accountNo={}", accountNo);
+                    return new AccountNotFoundException(accountNo + " 계좌를 찾을 수 없습니다.");
+                });
     }
 
     // 계좌개설: 검증 → 계좌번호 발급 → 저장
