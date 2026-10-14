@@ -39,3 +39,10 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+javadoc {
+	options.encoding = 'UTF-8'
+	options.charSet = 'UTF-8'
+	options.docEncoding = 'UTF-8'
+	options.addStringOption('Xdoclint:none', '-quiet')
+}

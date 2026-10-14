@@ -34,6 +34,14 @@ public class AccountService {
         return accountRepository.findByAccountNo(accountNo);
     }
 
+    /**
+     * Controller에 찾은 계좌번호를 반환
+     * <p>테스트: localhost:8080/api/accounts/1002-345-112233</p>
+     *
+     * @param accountNo 찾을 계좌번호 (예: 1002-345-112233)
+     * @return 입력한 AccountNo에 맞는 Account 엔티티를 반환
+     * @throws AccountNotFoundException
+     */
     public Account getAccount(String accountNo) {
         return findAccount(accountNo)
                 .orElseThrow(() -> new AccountNotFoundException(accountNo + " 계좌를 찾을 수 없습니다."));

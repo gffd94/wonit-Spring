@@ -8,6 +8,7 @@ import com.example.wonit.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.util.List;
 
 @Tag(name = "계좌 API", description = "계좌 조회 · 개설 API")
+@Slf4j
 @RestController
 @RequestMapping("/api/accounts")
 @RequiredArgsConstructor
@@ -51,6 +53,7 @@ public class AccountController {
     }
 
     // 계좌 전체를 조회해서 그중에 '정상' 계좌만 계좌번호만 출력
+
     @GetMapping("/report1")
     public List<String> normalAccountNos() {
         return accountService.normalAccountNos();
@@ -73,11 +76,21 @@ public class AccountController {
 //                accountService.savingsBalanceSum());
 //    }
 
-    // 특정 계좌번호의 정보 조회
-    // GET /api/accounts/1002-345-112233
-    // 🚨 이름을 꼭 적습니다: @PathVariable("accountNo"). 주소의 {accountNo} 자리 값이 이 매개변수로 들어옵니다
+    /**
+     * 계좌번호로 계좌 하나를 찾는다.
+     * <p>테스트: localhost:8080/api/accounts/1002-345-112233</p>
+     *
+     * @param accountNo 찾을 계좌번호 (예: 1002-345-112233)
+     * @return 찾은 계좌
+     * @throws com.example.wonit.exception.AccountNotFoundException 해당 계좌번호의 계좌가 없을 때
+     */
     @GetMapping("/{accountNo}")
     public AccountResponse findOne(@PathVariable("accountNo") String accountNo) {
+        log.trace("trace level의 로그 - 자잘함");
+        log.debug("debug level의 로그 - 개발자가 flow 따라갈 수 있는 수준의 로그");
+        log.info("info level의 로그 - 사용자나 시스템의 의미있는 내용을 담은 로그, 실제 운영환경에는 info 이상만 수집");
+        log.warn("warn level의 로그 - 현재는 문제 없지만 앞으로 문제가 될 수 있는 상황에 대한 경고");
+        log.error("error level의 로그 - 치명적인 로그");
         return AccountResponse.from(accountService.getAccount(accountNo));
     }
 
