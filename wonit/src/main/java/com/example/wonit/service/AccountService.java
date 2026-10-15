@@ -152,4 +152,10 @@ public class AccountService {
                 .map(AccountResponse::from)
                 .toList();
     }
+
+    // 계좌 삭제: 조회(없으면 AccountNotFoundException) → DELETE 를 한 트랜잭션으로 묶습니다
+    @Transactional
+    public void delete(String accountNo) {
+        accountRepository.delete(getAccount(accountNo));
+    }
 }

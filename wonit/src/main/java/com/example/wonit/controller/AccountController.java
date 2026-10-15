@@ -133,4 +133,11 @@ public class AccountController {
     public List<AccountResponse> getAccountsByAccountType(@RequestParam String accountType) {
         return accountService.getAccountsByAccountType(accountType);
     }
+
+    // 계좌 삭제. 성공하면 본문 없이 204, 없는 계좌면 404
+    @DeleteMapping("/{accountNo}")
+    public ResponseEntity<Void> delete(@PathVariable("accountNo") String accountNo) {
+        accountService.delete(accountNo);
+        return ResponseEntity.noContent().build();
+    }
 }
